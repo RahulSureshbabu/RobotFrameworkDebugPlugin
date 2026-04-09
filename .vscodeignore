@@ -1,0 +1,17 @@
+.vscode/**
+.vscode-test/**
+src/**
+.gitignore
+.yarnrc
+log.html
+report.html
+output.xml
+robot-debug.txt
+*.vsix
+python/**/__pycache__/**
+**/*.pyc
+**/tsconfig.json
+**/eslint.config.mjs
+**/*.map
+**/*.ts
+**/.vscode-test.*

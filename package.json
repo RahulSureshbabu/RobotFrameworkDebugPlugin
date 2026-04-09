@@ -1,0 +1,153 @@
+{
+  "name": "rfw-plugin",
+  "displayName": "rfw-plugin",
+  "description": "Run and debug Robot Framework tests directly from VS Code.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.113.0"
+  },
+  "categories": [
+    "Testing",
+    "Debuggers"
+  ],
+  "keywords": [
+    "robotframework",
+    "robot",
+    "python",
+    "testing",
+    "debug"
+  ],
+  "extensionDependencies": [
+    "ms-python.python"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "robotframework",
+        "aliases": [
+          "Robot Framework",
+          "robotframework"
+        ],
+        "extensions": [
+          ".robot",
+          ".resource"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "robotframework"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "rfw-robot",
+        "label": "Robot Framework (rfw-plugin)",
+        "languages": [
+          "robotframework"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "target",
+              "pythonPath"
+            ],
+            "properties": {
+              "target": {
+                "type": "string",
+                "description": "Path to the Robot Framework file to debug."
+              },
+              "testName": {
+                "type": "string",
+                "description": "Optional Robot test name to debug."
+              },
+              "pythonPath": {
+                "type": "string",
+                "description": "Python executable that runs Robot Framework."
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory for the Robot test run."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "name": "Robot Framework: Debug current file",
+            "type": "rfw-robot",
+            "request": "launch",
+            "target": "${file}",
+            "pythonPath": "${config:rfw-plugin.pythonPath}",
+            "cwd": "${workspaceFolder}"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "rfw-plugin.setPythonPath",
+        "title": "Robot Framework: Set Python Path"
+      },
+      {
+        "command": "rfw-plugin.runRobotTest",
+        "title": "Robot Framework: Run Test"
+      },
+      {
+        "command": "rfw-plugin.debugRobotTest",
+        "title": "Robot Framework: Debug Test"
+      },
+      {
+        "command": "rfw-plugin.runRobotSuite",
+        "title": "Robot Framework: Run Suite"
+      },
+      {
+        "command": "rfw-plugin.debugRobotSuite",
+        "title": "Robot Framework: Debug Suite"
+      }
+    ],
+    "configuration": {
+      "title": "Robot Framework Runner",
+      "properties": {
+        "rfw-plugin.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Python executable path used to run and debug Robot Framework tests. If empty, the extension will ask for it."
+        },
+        "rfw-plugin.enableCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Run Test and Debug Test buttons above each Robot Framework test case."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "@vscode/debugadapter": "^1.68.0",
+    "@vscode/debugprotocol": "^1.68.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.113.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
+  }
+}

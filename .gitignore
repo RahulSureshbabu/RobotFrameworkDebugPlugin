@@ -1,0 +1,18 @@
+out/
+dist/
+node_modules/
+.vscode-test/
+
+# Packaged extension artifacts
+*.vsix
+
+# Robot Framework run artifacts
+log.html
+report.html
+output.xml
+robot-debug.txt
+
+# Python cache files
+__pycache__/
+*.pyc
+
