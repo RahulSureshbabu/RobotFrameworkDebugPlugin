@@ -1,0 +1,283 @@
+{
+  "name": "robotframework-debug",
+  "displayName": "Robot Framework Debug",
+  "description": "Run and debug Robot Framework tests directly from VS Code with full test explorer integration.",
+  "version": "0.1.0",
+  "publisher": "robotframework-debug",
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RahulSureshbabu/RobotFrameworkDebugPlugin"
+  },
+  "categories": [
+    "Debuggers",
+    "Testing",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "robot",
+    "robotframework",
+    "robot framework",
+    "test",
+    "debug"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.robot",
+    "workspaceContains:**/*.resource"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "robotframework",
+        "aliases": [
+          "Robot Framework",
+          "robotframework"
+        ],
+        "extensions": [
+          ".robot",
+          ".resource"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "robotframework.runTest",
+        "title": "Run Robot Framework Test",
+        "category": "Robot Framework",
+        "icon": "$(play)"
+      },
+      {
+        "command": "robotframework.debugTest",
+        "title": "Debug Robot Framework Test",
+        "category": "Robot Framework",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "robotframework.runAllTests",
+        "title": "Run All Robot Framework Tests",
+        "category": "Robot Framework",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "robotframework.refreshTests",
+        "title": "Refresh Robot Framework Tests",
+        "category": "Robot Framework",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "robotframework.runTest",
+          "when": "resourceExtname == .robot || resourceExtname == .resource",
+          "group": "navigation@1"
+        },
+        {
+          "command": "robotframework.debugTest",
+          "when": "resourceExtname == .robot || resourceExtname == .resource",
+          "group": "navigation@2"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "robotframework.runTest",
+          "when": "resourceExtname == .robot || resourceExtname == .resource",
+          "group": "robotframework@1"
+        },
+        {
+          "command": "robotframework.debugTest",
+          "when": "resourceExtname == .robot || resourceExtname == .resource",
+          "group": "robotframework@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Robot Framework",
+      "properties": {
+        "robotframework.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to the Python interpreter used to run Robot Framework."
+        },
+        "robotframework.robotCommand": {
+          "type": "string",
+          "default": "robot",
+          "description": "Command or path used to invoke the robot runner. Defaults to 'robot' (which must be on PATH)."
+        },
+        "robotframework.outputDir": {
+          "type": "string",
+          "default": "${workspaceFolder}/results",
+          "description": "Directory where Robot Framework output files are written."
+        },
+        "robotframework.extraArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Additional command-line arguments passed to robot when running tests."
+        },
+        "robotframework.debugPort": {
+          "type": "number",
+          "default": 6612,
+          "description": "TCP port used by the Robot Framework debug listener."
+        },
+        "robotframework.debugHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host used by the Robot Framework debug listener."
+        },
+        "robotframework.discoverPatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/*.robot"
+          ],
+          "description": "Glob patterns used to discover Robot Framework test files."
+        },
+        "robotframework.excludePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/node_modules/**",
+            "**/.venv/**",
+            "**/venv/**"
+          ],
+          "description": "Glob patterns for directories/files to exclude from test discovery."
+        }
+      }
+    },
+    "debuggers": [
+      {
+        "type": "robotframework",
+        "label": "Robot Framework",
+        "languages": [
+          "robotframework"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "target"
+            ],
+            "properties": {
+              "target": {
+                "type": "string",
+                "description": "Path to the .robot file or directory to run.",
+                "default": "${file}"
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Additional arguments passed to robot.",
+                "default": []
+              },
+              "pythonPath": {
+                "type": "string",
+                "description": "Path to the Python executable.",
+                "default": "python"
+              },
+              "robotCommand": {
+                "type": "string",
+                "description": "Command used to invoke robot.",
+                "default": "robot"
+              },
+              "outputDir": {
+                "type": "string",
+                "description": "Directory where robot output files are written.",
+                "default": "${workspaceFolder}/results"
+              },
+              "debugPort": {
+                "type": "number",
+                "description": "TCP port for the debug listener.",
+                "default": 6612
+              },
+              "debugHost": {
+                "type": "string",
+                "description": "Host for the debug listener.",
+                "default": "127.0.0.1"
+              },
+              "env": {
+                "type": "object",
+                "description": "Additional environment variables.",
+                "default": {}
+              },
+              "cwd": {
+                "type": "string",
+                "description": "Working directory for the robot process.",
+                "default": "${workspaceFolder}"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "robotframework",
+            "request": "launch",
+            "name": "Robot Framework: Run Current File",
+            "target": "${file}"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Robot Framework: Launch",
+            "description": "Launch and debug a Robot Framework test file.",
+            "body": {
+              "type": "robotframework",
+              "request": "launch",
+              "name": "Robot Framework: ${1:Launch}",
+              "target": "^\"\\${file}\""
+            }
+          },
+          {
+            "label": "Robot Framework: Launch Suite",
+            "description": "Launch and debug a Robot Framework test suite directory.",
+            "body": {
+              "type": "robotframework",
+              "request": "launch",
+              "name": "Robot Framework: Suite",
+              "target": "^\"\\${workspaceFolder}\"",
+              "args": []
+            }
+          }
+        ]
+      }
+    ],
+    "breakpoints": [
+      {
+        "language": "robotframework"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTests.js",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.5",
+    "@types/vscode": "^1.80.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.56.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.3.3"
+  }
+}
