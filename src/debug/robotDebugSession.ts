@@ -91,7 +91,13 @@ export function buildRuntimePythonArgs(
 	];
 
 	if (debugpyPort !== undefined) {
-		commandArguments.push('--debugpy-port', String(debugpyPort));
+		commandArguments.push(
+			'--debugpy-port',
+			String(debugpyPort),
+			'--wait-for-client',
+			'--wait-for-client-timeout',
+			'10',
+		);
 	}
 
 	commandArguments.push('--target', target);
@@ -418,17 +424,26 @@ class RobotDebugSession extends LoggingDebugSession {
 	private async startPythonChildSession(args: RobotLaunchRequestArguments, debugpyPort: number): Promise<void> {
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(args.target));
 		this.sendEvent(new OutputEvent(`Requesting Python attach on 127.0.0.1:${debugpyPort}\n`, 'console'));
-		const attached = await vscode.debug.startDebugging(workspaceFolder, {
-			name: `Python keywords: ${path.basename(args.target)}`,
-			type: 'debugpy',
-			request: 'attach',
-			connect: {
-				host: '127.0.0.1',
-				port: debugpyPort,
+		const attached = await vscode.debug.startDebugging(
+			workspaceFolder,
+			{
+				name: `Python keywords: ${path.basename(args.target)}`,
+				type: 'debugpy',
+				request: 'attach',
+				connect: {
+					host: '127.0.0.1',
+					port: debugpyPort,
+				},
+				justMyCode: false,
+				subProcess: true,
 			},
-			justMyCode: false,
-			subProcess: true,
-		});
+			{
+				parentSession: this.ownerSession,
+				lifecycleManagedByParent: true,
+				consoleMode: vscode.DebugConsoleMode.MergeWithParent,
+				compact: true,
+			},
+		);
 
 		if (!attached) {
 			throw new Error(`Unable to attach to the Python debugger at 127.0.0.1:${debugpyPort}.`);

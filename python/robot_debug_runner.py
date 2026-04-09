@@ -4,6 +4,7 @@ import os
 import socket
 import sys
 import threading
+import time
 import traceback
 from queue import Queue
 from typing import Any
@@ -16,14 +17,29 @@ def normalize_path(source: str | None) -> str:
     return os.path.normcase(os.path.abspath(source or ''))
 
 
-def enable_debugpy(port: int) -> str | None:
+def enable_debugpy(port: int) -> tuple[bool, str | None]:
     try:
         import debugpy  # type: ignore
 
         debugpy.listen(('127.0.0.1', port))
-        return None
+        return True, None
     except Exception as error:  # pragma: no cover - best effort runtime support
-        return f'Unable to initialize debugpy on 127.0.0.1:{port}: {error}'
+        return False, f'Unable to initialize debugpy on 127.0.0.1:{port}: {error}'
+
+
+def wait_for_debugpy_client(timeout_seconds: float) -> bool:
+    try:
+        import debugpy  # type: ignore
+
+        deadline = time.monotonic() + max(timeout_seconds, 0.0)
+        while time.monotonic() < deadline:
+            if debugpy.is_client_connected():
+                return True
+            time.sleep(0.1)
+
+        return debugpy.is_client_connected()
+    except Exception:  # pragma: no cover - defensive attach polling
+        return False
 
 
 class DebugConnection:
@@ -183,13 +199,16 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--event-port', required=True, type=int)
     parser.add_argument('--debugpy-port', required=False, type=int)
+    parser.add_argument('--wait-for-client', action='store_true')
+    parser.add_argument('--wait-for-client-timeout', required=False, type=float, default=10.0)
     parser.add_argument('--target', required=True)
     parser.add_argument('--test', required=False)
     arguments = parser.parse_args()
 
+    debugpy_enabled = False
     debugpy_message: str | None = None
     if arguments.debugpy_port:
-        debugpy_message = enable_debugpy(arguments.debugpy_port)
+        debugpy_enabled, debugpy_message = enable_debugpy(arguments.debugpy_port)
 
     connection = DebugConnection(arguments.event_port)
     if arguments.debugpy_port and not debugpy_message:
@@ -206,6 +225,39 @@ def main() -> int:
         })
 
     connection.wait_for_breakpoints()
+
+    if arguments.wait_for_client and arguments.debugpy_port and debugpy_enabled:
+        connection.send_event({
+            'event': 'output',
+            'category': 'console',
+            'output': (
+                f'Waiting up to {arguments.wait_for_client_timeout:.1f}s '
+                'for Python debugger attach before running Robot tests...\n'
+            ),
+        })
+        if wait_for_debugpy_client(arguments.wait_for_client_timeout):
+            connection.send_event({
+                'event': 'output',
+                'category': 'console',
+                'output': 'Python debugger client attached. Pausing before Robot execution so Python breakpoints are active.\n',
+            })
+            try:
+                import debugpy  # type: ignore
+
+                debugpy.breakpoint()
+            except Exception as error:  # pragma: no cover - defensive runtime support
+                connection.send_event({
+                    'event': 'output',
+                    'category': 'stderr',
+                    'output': f'Unable to trigger initial Python breakpoint: {error}\n',
+                })
+        else:
+            connection.send_event({
+                'event': 'output',
+                'category': 'console',
+                'output': 'Timed out waiting for Python debugger attach; continuing Robot execution.\n',
+            })
+
     listener = RobotBreakpointListener(connection)
 
     try:

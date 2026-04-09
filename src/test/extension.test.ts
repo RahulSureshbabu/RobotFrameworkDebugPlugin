@@ -81,7 +81,7 @@ Morning Check
 		assert.ok(true);
 	});
 
-	test('builds non-blocking runtime Python arguments for Robot debugging', () => {
+	test('builds runtime Python arguments that wait for debugger attach', () => {
 		const runtimeArgs = buildRuntimePythonArgs(
 			'C:/rfw-plugin/python/robot_debug_runner.py',
 			56789,
@@ -92,7 +92,7 @@ Morning Check
 
 		assert.ok(runtimeArgs.includes('--debugpy-port'));
 		assert.ok(runtimeArgs.includes('45678'));
-		assert.ok(!runtimeArgs.includes('--wait-for-client'));
+		assert.ok(runtimeArgs.includes('--wait-for-client'));
 		assert.ok(runtimeArgs.includes('Basic Sanity Check'));
 	});
 
