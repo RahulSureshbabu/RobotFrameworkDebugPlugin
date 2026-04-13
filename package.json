@@ -1,8 +1,9 @@
 {
   "name": "rfw-plugin",
-  "displayName": "rfw-plugin",
+  "displayName": "RFW Test Debug",
+  "icon": "images/icon.png",
   "description": "Run and debug Robot Framework tests directly from VS Code.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "rahulsureshbabu",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
@@ -21,7 +22,10 @@
     "Debuggers"
   ],
   "keywords": [
+    "rfw",
     "robotframework",
+    "robot framework",
+    "robot framework debugger",
     "robot",
     "python",
     "testing",
