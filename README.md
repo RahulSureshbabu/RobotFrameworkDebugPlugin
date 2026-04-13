@@ -69,3 +69,35 @@ To create a package locally:
 npx @vscode/vsce package
 ```
 
+## 📦 Distribution
+
+### Option 1: GitHub Releases (VSIX download)
+
+This repository includes a workflow at `.github/workflows/release-vsix.yml`.
+
+How it works:
+
+1. Push a version tag like `v0.0.1`.
+2. GitHub Actions compiles the extension and builds a `.vsix` package.
+3. A GitHub Release is created and the `.vsix` file is attached.
+
+Users can then download the `.vsix` and install it from VS Code using **Extensions > ... > Install from VSIX...**.
+
+### Option 2: VS Code Marketplace
+
+This repository includes a workflow at `.github/workflows/publish-marketplace.yml`.
+
+Prerequisites:
+
+1. Create a Marketplace publisher.
+2. Ensure `publisher` in `package.json` matches your publisher ID.
+3. Create a repository secret named `VSCE_PAT` with your Marketplace Personal Access Token.
+
+Publish:
+
+1. Open **GitHub Actions**.
+2. Run **Publish to VS Code Marketplace** (manual workflow).
+3. The workflow executes `npx @vscode/vsce publish -p "$VSCE_PAT"`.
+
+After completion, the extension is installable directly from the VS Code Extensions Marketplace.
+

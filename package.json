@@ -3,6 +3,16 @@
   "displayName": "rfw-plugin",
   "description": "Run and debug Robot Framework tests directly from VS Code.",
   "version": "0.0.1",
+  "publisher": "rahulsureshbabu",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RahulSureshbabu/RobotFrameworkDebugPlugin.git"
+  },
+  "homepage": "https://github.com/RahulSureshbabu/RobotFrameworkDebugPlugin",
+  "bugs": {
+    "url": "https://github.com/RahulSureshbabu/RobotFrameworkDebugPlugin/issues"
+  },
   "engines": {
     "vscode": "^1.113.0"
   },
