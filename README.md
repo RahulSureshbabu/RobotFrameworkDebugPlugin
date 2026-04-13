@@ -101,3 +101,25 @@ Publish:
 
 After completion, the extension is installable directly from the VS Code Extensions Marketplace.
 
+## ✅ Release Checklist
+
+Use this checklist for each release:
+
+1. Ensure version in `package.json` is correct.
+2. Push changes to `main`.
+3. Create and push a Git tag (example: `v0.0.2`).
+4. Confirm GitHub workflow **Build and Attach VSIX** succeeds.
+5. Verify the generated `.vsix` is attached to the GitHub Release.
+6. Confirm repository secret `VSCE_PAT` exists:
+  - GitHub repo -> **Settings** -> **Secrets and variables** -> **Actions** -> **Repository secrets**
+7. Run workflow **Publish to VS Code Marketplace** manually:
+  - GitHub repo -> **Actions** -> **Publish to VS Code Marketplace** -> **Run workflow**
+8. Confirm the extension appears in Marketplace search.
+
+Quick commands for local tagging:
+
+```bash
+git tag -a v0.0.2 -m "Release v0.0.2"
+git push origin v0.0.2
+```
+
