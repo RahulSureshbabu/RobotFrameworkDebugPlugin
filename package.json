@@ -3,7 +3,7 @@
   "displayName": "RFW Test Debug",
   "icon": "images/icon.png",
   "description": "Run and debug Robot Framework tests directly from VS Code.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "rahulsureshbabu",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
