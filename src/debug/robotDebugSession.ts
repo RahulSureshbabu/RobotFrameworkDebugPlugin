@@ -408,8 +408,11 @@ class RobotDebugSession extends LoggingDebugSession {
 			await this.startPythonChildSession(args, debugpyPort);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			this.sendEvent(new OutputEvent(`${message}\n`, 'stderr'));
-			this.sendEvent(new OutputEvent('Robot-file breakpoints can still work even if Python attach was not established.\n', 'console'));
+			this.sendEvent(new OutputEvent(`Python debugger attach failure: ${message}\n`, 'stderr'));
+			this.sendEvent(new OutputEvent(
+				'Python debugging was not attached. Ensure the selected Python environment has debugpy installed and that the debugger type is available.\n',
+				'console',
+			));
 		}
 	}
 
@@ -424,32 +427,50 @@ class RobotDebugSession extends LoggingDebugSession {
 	private async startPythonChildSession(args: RobotLaunchRequestArguments, debugpyPort: number): Promise<void> {
 		const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(args.target));
 		this.sendEvent(new OutputEvent(`Requesting Python attach on 127.0.0.1:${debugpyPort}\n`, 'console'));
-		const attached = await vscode.debug.startDebugging(
-			workspaceFolder,
-			{
-				name: `Python keywords: ${path.basename(args.target)}`,
-				type: 'debugpy',
-				request: 'attach',
-				connect: {
-					host: '127.0.0.1',
-					port: debugpyPort,
-				},
-				justMyCode: false,
-				subProcess: true,
-			},
-			{
-				parentSession: this.ownerSession,
-				lifecycleManagedByParent: true,
-				consoleMode: vscode.DebugConsoleMode.MergeWithParent,
-				compact: true,
-			},
-		);
 
-		if (!attached) {
-			throw new Error(`Unable to attach to the Python debugger at 127.0.0.1:${debugpyPort}.`);
+		const debugTypes = ['debugpy', 'python'] as const;
+		let attached = false;
+		let lastError: Error | undefined;
+
+		for (const debugType of debugTypes) {
+			try {
+				attached = await vscode.debug.startDebugging(
+					workspaceFolder,
+					{
+						name: `Python keywords: ${path.basename(args.target)}`,
+						type: debugType,
+						request: 'attach',
+						connect: {
+							host: '127.0.0.1',
+							port: debugpyPort,
+						},
+						justMyCode: false,
+						subProcess: true,
+					},
+					{
+						parentSession: this.ownerSession,
+						lifecycleManagedByParent: true,
+						consoleMode: vscode.DebugConsoleMode.MergeWithParent,
+						compact: true,
+					},
+				);
+				if (attached) {
+					this.sendEvent(new OutputEvent(`Python debugger attached using type '${debugType}'.\n`, 'console'));
+					return;
+				}
+
+				this.sendEvent(new OutputEvent(`Debug session type '${debugType}' did not attach.\n`, 'console'));
+			} catch (error) {
+				lastError = error instanceof Error ? error : new Error(String(error));
+				this.sendEvent(new OutputEvent(`Attempt to attach using type '${debugType}' failed: ${lastError.message}\n`, 'console'));
+			}
 		}
 
-		this.sendEvent(new OutputEvent('Python debugger attached.\n', 'console'));
+		throw new Error(
+			lastError
+				? `Unable to attach to the Python debugger at 127.0.0.1:${debugpyPort}: ${lastError.message}`
+				: `Unable to attach to the Python debugger at 127.0.0.1:${debugpyPort}.`,
+		);
 	}
 
 	private handleRuntimeMessage(line: string): void {

@@ -23,6 +23,12 @@ def enable_debugpy(port: int) -> tuple[bool, str | None]:
 
         debugpy.listen(('127.0.0.1', port))
         return True, None
+    except ModuleNotFoundError:  # pragma: no cover - best effort runtime support
+        return False, (
+            f'Unable to initialize debugpy on 127.0.0.1:{port}: '
+            'debugpy is not installed in the selected Python environment. '
+            'Install it with `pip install debugpy`.'
+        )
     except Exception as error:  # pragma: no cover - best effort runtime support
         return False, f'Unable to initialize debugpy on 127.0.0.1:{port}: {error}'
 
