@@ -8,6 +8,11 @@ import { RobotCodeLensProvider } from './robotCodeLensProvider';
 
 const CONFIG_SECTION = 'rfw-plugin';
 const PYTHON_PATH_KEY = 'pythonPath';
+const STOP_COMMAND = 'rfw-plugin.stopRobotExecution';
+
+let activeRobotTerminal: vscode.Terminal | undefined;
+let activeDebugSession: vscode.DebugSession | undefined;
+let stopStatusBarItem: vscode.StatusBarItem | undefined;
 
 type UriLike = vscode.Uri | {
 	fsPath?: string;
@@ -35,6 +40,10 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('rfw-plugin.debugRobotTest', debugRobotTest),
 		vscode.commands.registerCommand('rfw-plugin.runRobotSuite', runRobotSuite),
 		vscode.commands.registerCommand('rfw-plugin.debugRobotSuite', debugRobotSuite),
+		vscode.commands.registerCommand(STOP_COMMAND, stopRobotExecution),
+		vscode.window.onDidCloseTerminal(handleClosedTerminal),
+		vscode.debug.onDidStartDebugSession(handleDebugSessionStarted),
+		vscode.debug.onDidTerminateDebugSession(handleDebugSessionTerminated),
 	);
 }
 
@@ -91,6 +100,9 @@ async function runResolvedRobotTarget(target: ResolvedRobotTarget): Promise<void
 	}
 
 	const terminal = vscode.window.createTerminal(terminalOptions);
+	activeDebugSession = undefined;
+	activeRobotTerminal = terminal;
+	showStopButton();
 	terminal.show(true);
 	terminal.sendText(buildShellCommand(pythonPath, buildRobotArguments(target.fileUri.fsPath, target.testName)), true);
 }
@@ -126,10 +138,69 @@ async function debugResolvedRobotTarget(target: ResolvedRobotTarget): Promise<vo
 		buildRobotDebugConfiguration(target.fileUri, target.testName, pythonPath),
 	);
 
+	if (started) {
+		activeRobotTerminal = undefined;
+		showStopButton();
+	}
+
 	if (!started) {
 		void vscode.window.showErrorMessage(
 			'Unable to start Robot Framework debugging. Make sure the Python extension is installed and the selected Python environment contains `robotframework`.',
 		);
+	}
+}
+
+async function stopRobotExecution(): Promise<void> {
+	if (activeDebugSession) {
+		await vscode.debug.stopDebugging(activeDebugSession);
+		return;
+	}
+
+	if (activeRobotTerminal) {
+		activeRobotTerminal.dispose();
+		return;
+	}
+
+	void vscode.window.showInformationMessage('No active Robot Framework execution to stop.');
+}
+
+function showStopButton(): void {
+	if (!stopStatusBarItem) {
+		stopStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+		stopStatusBarItem.command = STOP_COMMAND;
+		stopStatusBarItem.text = '$(debug-stop) Stop Robot Test';
+		stopStatusBarItem.tooltip = 'Stop the currently running Robot Framework test';
+	}
+
+	stopStatusBarItem.show();
+}
+
+function hideStopButton(): void {
+	stopStatusBarItem?.hide();
+}
+
+function clearActiveRobotExecution(): void {
+	activeRobotTerminal = undefined;
+	activeDebugSession = undefined;
+	hideStopButton();
+}
+
+function handleClosedTerminal(terminal: vscode.Terminal): void {
+	if (activeRobotTerminal && terminal === activeRobotTerminal) {
+		clearActiveRobotExecution();
+	}
+}
+
+function handleDebugSessionStarted(session: vscode.DebugSession): void {
+	if (session.type === 'rfw-robot') {
+		activeDebugSession = session;
+		showStopButton();
+	}
+}
+
+function handleDebugSessionTerminated(session: vscode.DebugSession): void {
+	if (activeDebugSession && session.id === activeDebugSession.id) {
+		clearActiveRobotExecution();
 	}
 }
 
