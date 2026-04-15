@@ -22,7 +22,21 @@ def enable_debugpy(port: int) -> tuple[bool, str | None]:
         import debugpy  # type: ignore
 
         debugpy.listen(('127.0.0.1', port))
-        return True, None
+
+        # Wait for the debugpy server to actually be ready to accept connections
+        import time
+        import socket
+        deadline = time.monotonic() + 5.0  # Wait up to 5 seconds for server to be ready
+        while time.monotonic() < deadline:
+            try:
+                # Test if we can connect to the port
+                test_socket = socket.create_connection(('127.0.0.1', port), timeout=0.1)
+                test_socket.close()
+                return True, None
+            except (ConnectionRefusedError, OSError):
+                time.sleep(0.05)  # Wait a bit before trying again
+
+        return False, f'Unable to initialize debugpy on 127.0.0.1:{port}: server did not become ready within timeout'
     except ModuleNotFoundError:  # pragma: no cover - best effort runtime support
         return False, (
             f'Unable to initialize debugpy on 127.0.0.1:{port}: '

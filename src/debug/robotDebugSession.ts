@@ -422,6 +422,8 @@ class RobotDebugSession extends LoggingDebugSession {
 		if (this.runtimeProcess && this.runtimeProcess.exitCode !== null) {
 			throw new Error(`Robot debug runtime exited before the Python debugger was ready (code ${this.runtimeProcess.exitCode}).`);
 		}
+		// Add a small delay to ensure debugpy server is fully ready
+		await delay(500);
 	}
 
 	private async startPythonChildSession(args: RobotLaunchRequestArguments, debugpyPort: number): Promise<void> {
@@ -433,6 +435,7 @@ class RobotDebugSession extends LoggingDebugSession {
 		let lastError: Error | undefined;
 
 		for (const debugType of debugTypes) {
+			this.sendEvent(new OutputEvent(`Trying to attach using debugger type '${debugType}'...\n`, 'console'));
 			try {
 				attached = await vscode.debug.startDebugging(
 					workspaceFolder,
@@ -455,11 +458,11 @@ class RobotDebugSession extends LoggingDebugSession {
 					},
 				);
 				if (attached) {
-					this.sendEvent(new OutputEvent(`Python debugger attached using type '${debugType}'.\n`, 'console'));
+					this.sendEvent(new OutputEvent(`Python debugger attached successfully using type '${debugType}'.\n`, 'console'));
 					return;
 				}
 
-				this.sendEvent(new OutputEvent(`Debug session type '${debugType}' did not attach.\n`, 'console'));
+				this.sendEvent(new OutputEvent(`Debug session type '${debugType}' started but did not attach properly.\n`, 'console'));
 			} catch (error) {
 				lastError = error instanceof Error ? error : new Error(String(error));
 				this.sendEvent(new OutputEvent(`Attempt to attach using type '${debugType}' failed: ${lastError.message}\n`, 'console'));
