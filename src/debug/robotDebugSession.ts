@@ -247,6 +247,8 @@ class RobotDebugSession extends LoggingDebugSession {
 			?? [];
 		const uniqueLines = Array.from(new Set<number>(requestedLines)).sort((left, right) => left - right);
 
+		this.sendEvent(new OutputEvent(`DEBUG: Setting breakpoints for ${sourcePath}: ${uniqueLines.join(', ')}\n`, 'console'));
+
 		if (sourcePath) {
 			this.breakpoints.set(sourcePath, uniqueLines);
 		}
@@ -496,9 +498,11 @@ class RobotDebugSession extends LoggingDebugSession {
 	}
 
 	private pushBreakpointsToRuntime(): void {
+		const breakpoints = Object.fromEntries(this.breakpoints.entries());
+		this.sendEvent(new OutputEvent(`DEBUG: Sending breakpoints to runtime: ${JSON.stringify(breakpoints)}\n`, 'console'));
 		this.sendRuntimeCommand({
 			command: 'setBreakpoints',
-			breakpoints: Object.fromEntries(this.breakpoints.entries()),
+			breakpoints: breakpoints,
 		});
 	}
 

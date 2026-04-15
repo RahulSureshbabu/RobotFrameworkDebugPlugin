@@ -85,6 +85,11 @@ class DebugConnection:
                     normalize_path(source): {int(line_number) for line_number in lines}
                     for source, lines in payload.get('breakpoints', {}).items()
                 }
+                self._connection.send_event({
+                    'event': 'output',
+                    'category': 'console',
+                    'output': f"DEBUG: Breakpoints set: {self._breakpoints}\n",
+                })
                 self._initialized.set()
                 continue
 
@@ -96,7 +101,15 @@ class DebugConnection:
     def has_breakpoint(self, source: str | None, line: int | None) -> bool:
         if not source or not line:
             return False
-        return int(line) in self._breakpoints.get(normalize_path(source), set())
+        normalized_source = normalize_path(source)
+        has_bp = int(line) in self._breakpoints.get(normalized_source, set())
+        if has_bp:
+            self._connection.send_event({
+                'event': 'output',
+                'category': 'console',
+                'output': f"DEBUG: Found breakpoint at {normalized_source}:{line}\n",
+            })
+        return has_bp
 
     def send_event(self, payload: dict[str, Any]) -> None:
         self._writer.write(json.dumps(payload) + '\n')
@@ -142,6 +155,14 @@ class RobotBreakpointListener(ListenerV3):
         event_depth = self._keyword_depth + 1
         line = int(getattr(data, 'lineno', 1) or 1)
         source = str(getattr(data, 'source', '') or self._current_test_source)
+        keyword_name = str(getattr(data, 'name', ''))
+
+        # Debug logging
+        self._connection.send_event({
+            'event': 'output',
+            'category': 'console',
+            'output': f"DEBUG: start_keyword '{keyword_name}' at {source}:{line}, depth={event_depth}, resume_mode={self._resume_mode}, resume_depth={self._resume_depth}\n",
+        })
 
         reason: str | None = None
         if self._stop_on_entry:
@@ -149,6 +170,11 @@ class RobotBreakpointListener(ListenerV3):
             self._stop_on_entry = False
         elif self._connection.has_breakpoint(source, line):
             reason = 'breakpoint'
+            self._connection.send_event({
+                'event': 'output',
+                'category': 'console',
+                'output': f"DEBUG: Hit breakpoint at {source}:{line}\n",
+            })
         elif self._resume_mode == 'stepIn':
             reason = 'step'
         elif self._resume_mode == 'next' and event_depth <= self._resume_depth:
